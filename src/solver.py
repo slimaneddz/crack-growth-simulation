@@ -15,13 +15,6 @@ class Params:
     DK_th: float
     max_N: int
 def simulate(params: Params) -> Tuple[List[int], List[float], List[float]]:
-    """
-    Returns:
-      N_list: cumulative cycles
-      a_list: crack length
-      dK_list: ΔK at each step
-    Stop when a >= a_crit OR ΔK >= K_IC
-    """
     N = 0
     a = params.a0
 
@@ -30,29 +23,34 @@ def simulate(params: Params) -> Tuple[List[int], List[float], List[float]]:
     dK_list = [delta_K(params.delta_sigma, params.Y, a)]
 
     while True:
-        
+        # Safety stop: max cycles
         if N >= params.max_N:
-         break
+            break
+
         dK = delta_K(params.delta_sigma, params.Y, a)
+
+        # Stop conditions
+        if a >= params.a_crit or dK >= params.K_IC:
+            break
+
+        # Below threshold: no crack growth; just accumulate cycles
         if dK < params.DK_th:
-        # Below threshold: no crack growth, only accumulate cycles
             N += params.dN
             N_list.append(N)
             a_list.append(a)
             dK_list.append(dK)
-        continue
-        if a >= params.a_crit or dK >= params.K_IC:
-            break
+            continue
 
-        # Fatigue threshold condition
-        if dK < params.DK_th:
-           da_dN = 0
-        else:
-           da_dN = paris_da_dN(params.C, params.m, dK)
+        # Paris law growth (above threshold)
+        da_dN = paris_da_dN(params.C, params.m, dK)
         da = da_dN * params.dN
 
-        a = a + da
-        N = N + params.dN
+        # Safety: if something weird happens
+        if da <= 0:
+            break
+
+        a += da
+        N += params.dN
 
         N_list.append(N)
         a_list.append(a)
@@ -60,5 +58,5 @@ def simulate(params: Params) -> Tuple[List[int], List[float], List[float]]:
 
         if len(N_list) > 2_000_000:
             raise RuntimeError("Too many steps; check parameters.")
-        
+
     return N_list, a_list, dK_list

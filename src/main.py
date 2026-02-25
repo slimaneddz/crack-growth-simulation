@@ -12,11 +12,12 @@ def run():
     print("Running crack growth simulation...")
     params = load_params("config.json")
     N, a, dK = simulate(params)
-    with open("results.csv", "w", newline="") as f:
-         w = csv.writer(f)
-    w.writerow(["N", "a_m", "DeltaK"])
-    for i in range(len(N)):
-        w.writerow([N[i], a[i], dK[i]])
+    with open("results.csv", "w", newline="", encoding="utf-8") as f:
+       w = csv.writer(f)
+       w.writerow(["N", "a_m", "DeltaK"])
+       for i in range(len(N)):
+           w.writerow([N[i], a[i], dK[i]])
+
     print("Saved results.csv")
     print(f"Stopped at N={N[-1]} cycles, a={a[-1]:.6f} m, ΔK={dK[-1]:.3f}")
     plot_a_vs_N(N, a)
